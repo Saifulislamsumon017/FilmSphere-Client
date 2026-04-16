@@ -96,9 +96,9 @@ export default function Navbar() {
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? (
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-foreground" />
           ) : (
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6 text-foreground" />
           )}
         </button>
       </div>
@@ -130,7 +130,7 @@ export default function Navbar() {
 
               <div className="flex flex-col gap-2 mt-3">
                 <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full text-foreground">
                     Sign In
                   </Button>
                 </Link>

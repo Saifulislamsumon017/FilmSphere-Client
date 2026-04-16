@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Poppins, Play } from 'next/font/google';
 import './globals.css';
-import { cn } from '@/lib/utils';
+
 import QueryProvider from '@/providers/QueryProvider';
-import Navbar from '@/components/appComponets/Navbar';
+import { Toaster } from 'sonner';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -43,26 +43,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html
       lang="en"
-      className={cn(
-        'h-full',
-        'antialiased',
-        poppins.variable,
-        // abel.variable,
-        // oswald.variable,
-        play.variable,
-      )}
+      suppressHydrationWarning
+      className={`${poppins.variable} ${play.variable} antialiased h-full`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body
+        suppressHydrationWarning
+        // className="min-h-full flex flex-col font-sans"
+      >
         <QueryProvider>
-          <Navbar />
           {children}
-          {/* <Toaster position="top-right" richColors /> */}
+          <Toaster position="top-right" richColors />
         </QueryProvider>
       </body>
     </html>

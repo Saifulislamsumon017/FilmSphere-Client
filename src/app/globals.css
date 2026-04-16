@@ -108,8 +108,7 @@
     --shadow-cinema: 0 20px 60px -15px hsl(43 100% 55% / 0.15);
     --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.5);
 
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    --font-play: var(--font-play), sans-serif;
   }
 }
 
@@ -120,14 +119,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
+    font-family: var(--font-play);
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
+    font-family: var(--font-play);
     letter-spacing: 0.04em;
   }
 }
@@ -180,15 +179,15 @@
   background: hsl(var(--gold) / 0.5);
 }
 
-@layer base {
+/* @layer base {
   * {
     @apply border-border;
   }
   body {
-    /* ডিফল্ট ফন্ট Poppins হবে */
+    
     @apply bg-background text-foreground font-sans;
   }
-}
+} */
 
 /* Custom utilities */
 .gradient-text {
