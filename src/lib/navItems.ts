@@ -28,8 +28,8 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
       title: 'Settings',
       items: [
         {
-          title: 'Change Password',
-          href: '/change-password',
+          title: 'Reset Password',
+          href: '/reset-password',
           icon: 'Settings',
         },
       ],
@@ -43,42 +43,42 @@ export const adminNavItems: NavSection[] = [
     items: [
       {
         title: 'Movies',
-        href: '/admin/movies',
+        href: '/admin/dashboard/movies',
         icon: 'Film',
       },
       {
         title: 'Users',
-        href: '/admin/users',
+        href: '/admin/dashboard/users',
         icon: 'Users',
       },
       {
         title: 'Reviews',
-        href: '/admin/reviews',
+        href: '/admin/dashboard/reviews',
         icon: 'Star',
       },
       {
         title: 'Activity',
-        href: '/admin/activity',
+        href: '/admin/dashboard/activity',
         icon: 'Activity',
       },
       {
         title: 'My Activity',
-        href: '/admin/my-activity',
+        href: '/admin/dashboard/my-activity',
         icon: 'History',
       },
       {
         title: 'Purchases',
-        href: '/admin/purchases',
+        href: '/admin/dashboard/purchases',
         icon: 'CreditCard',
       },
       {
         title: 'Subscriptions',
-        href: '/admin/subscriptions',
+        href: '/admin/dashboard/subscriptions',
         icon: 'BadgeCheck',
       },
       {
         title: 'Settings',
-        href: '/admin/settings',
+        href: '/admin/dashboard/settings',
         icon: 'Settings',
       },
     ],
@@ -91,17 +91,17 @@ export const userNavItems: NavSection[] = [
     items: [
       {
         title: 'Watchlist',
-        href: '/user/watchlist',
+        href: '/dashboard/watchlist',
         icon: 'Heart',
       },
       {
         title: 'Purchases',
-        href: '/user/purchases',
+        href: '/dashboard/purchases',
         icon: 'CreditCard',
       },
       {
         title: 'Subscriptions',
-        href: '/user/subscriptions',
+        href: '/dashboard/subscriptions',
         icon: 'BadgeCheck',
       },
     ],
