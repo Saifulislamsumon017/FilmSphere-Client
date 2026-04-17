@@ -13,9 +13,26 @@ export interface IUser {
   isDeleted: boolean;
 }
 
+// export type RegisterResponse = {
+//   name: string;
+//   email: string;
+//   password: string;
+// };
+
+export interface IRegisterResponse {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface ILoginResponse {
   accessToken: string;
   refreshToken: string;
   token: string;
   user: IUser;
+}
+
+export interface IVerifyEmailResponse {
+  email: string;
+  otp: string;
 }
