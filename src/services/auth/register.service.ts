@@ -1,13 +1,12 @@
 import { httpClient } from '@/lib/axios/httpClient';
-import { ApiErrorResponse, ApiResponse } from '@/types/api.types';
+import { ApiErrorResponse } from '@/types/api.types';
 import { IRegisterResponse } from '@/types/auth.types';
 
 import { IRegisterPayload, registerUserZodSchema } from '@/zod/auth.validation';
-import { redirect } from 'next/navigation';
 
 export const registerService = async (
   payload: IRegisterPayload,
-): Promise<ApiResponse<IRegisterResponse> | ApiErrorResponse> => {
+): Promise<IRegisterResponse | ApiErrorResponse> => {
   const parsedPayload = registerUserZodSchema.safeParse(payload);
 
   if (!parsedPayload.success) {
@@ -23,20 +22,9 @@ export const registerService = async (
       parsedPayload.data,
     );
 
-    const email = response.data.email || parsedPayload.data.email;
-
-    redirect(`/verify-email?email=${email}`);
-  } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error &&
-      'digest' in error &&
-      typeof (error as { digest: string }).digest === 'string' &&
-      (error as { digest: string }).digest.startsWith('NEXT_REDIRECT')
-    ) {
-      throw error;
-    }
-
+    // 🔥 IMPORTANT FIX: response.data বের করো
+    return response.data;
+  } catch {
     return {
       success: false,
       message: 'Registration failed',

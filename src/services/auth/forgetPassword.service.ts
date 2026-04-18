@@ -1,18 +1,16 @@
 import { httpClient } from '@/lib/axios/httpClient';
 import { ApiErrorResponse } from '@/types/api.types';
-import { IVerifyEmailResponse } from '@/types/auth.types';
-
+import { IForgetPasswordResponse } from '@/types/auth.types';
 import {
-  IVerifyEmailPayload,
-  verifyEmailZodSchema,
+  forgetPasswordZodSchema,
+  IForgetPasswordPayload,
 } from '@/zod/auth.validation';
-
 import { redirect } from 'next/navigation';
 
-export const verifyEmailService = async (
-  payload: IVerifyEmailPayload,
-): Promise<IVerifyEmailResponse | ApiErrorResponse> => {
-  const parsedPayload = verifyEmailZodSchema.safeParse(payload);
+export const forgetPasswordService = async (
+  payload: IForgetPasswordPayload,
+): Promise<IForgetPasswordResponse | ApiErrorResponse> => {
+  const parsedPayload = forgetPasswordZodSchema.safeParse(payload);
 
   if (!parsedPayload.success) {
     return {
@@ -22,13 +20,13 @@ export const verifyEmailService = async (
   }
 
   try {
-    const response = await httpClient.post<IVerifyEmailResponse>(
-      '/auth/verify-email',
+    const response = await httpClient.post<IForgetPasswordResponse>(
+      '/auth/forget-password',
       parsedPayload.data,
     );
 
     if (response.success) {
-      redirect('/login');
+      redirect(`/reset-password?email=${response.data.email}`);
     }
 
     return response.data;
@@ -45,7 +43,7 @@ export const verifyEmailService = async (
 
     return {
       success: false,
-      message: 'Email verification failed',
+      message: 'Failed to send OTP',
     };
   }
 };

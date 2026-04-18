@@ -1,18 +1,16 @@
 import { httpClient } from '@/lib/axios/httpClient';
 import { ApiErrorResponse } from '@/types/api.types';
-import { IVerifyEmailResponse } from '@/types/auth.types';
-
+import { IResetPasswordResponse } from '@/types/auth.types';
 import {
-  IVerifyEmailPayload,
-  verifyEmailZodSchema,
+  IResetPasswordPayload,
+  resetPasswordZodSchema,
 } from '@/zod/auth.validation';
-
 import { redirect } from 'next/navigation';
 
-export const verifyEmailService = async (
-  payload: IVerifyEmailPayload,
-): Promise<IVerifyEmailResponse | ApiErrorResponse> => {
-  const parsedPayload = verifyEmailZodSchema.safeParse(payload);
+export const resetPasswordService = async (
+  payload: IResetPasswordPayload,
+): Promise<IResetPasswordResponse | ApiErrorResponse> => {
+  const parsedPayload = resetPasswordZodSchema.safeParse(payload);
 
   if (!parsedPayload.success) {
     return {
@@ -22,8 +20,8 @@ export const verifyEmailService = async (
   }
 
   try {
-    const response = await httpClient.post<IVerifyEmailResponse>(
-      '/auth/verify-email',
+    const response = await httpClient.post<IResetPasswordResponse>(
+      '/auth/reset-password',
       parsedPayload.data,
     );
 
@@ -45,7 +43,7 @@ export const verifyEmailService = async (
 
     return {
       success: false,
-      message: 'Email verification failed',
+      message: 'Password reset failed',
     };
   }
 };

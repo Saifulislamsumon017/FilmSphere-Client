@@ -5,87 +5,76 @@ import {
   isAuthRoute,
   UserRole,
 } from './lib/authUtils';
+import { jwtUtils } from './lib/jwtUtils';
+import { isTokenExpiringSoon } from './lib/tokenUtils';
+import {
+  getNewTokensWithRefreshToken,
+  getUserInfo,
+} from './services/auth/getusers.services';
 
-const refreshTokenMiddleware = async (
-  refreshToken: string,
-): Promise<boolean> => {
+async function refreshTokenMiddleware(refreshToken: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/refresh-token`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: refreshToken,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return false;
-    }
-
-    return true;
+    return await getNewTokensWithRefreshToken(refreshToken);
   } catch (error) {
-    console.error('Error refreshing token in middleware:', error);
-
+    console.error('Refresh token error:', error);
     return false;
   }
-};
+}
 
-export const proxy = async (request: NextRequest) => {
+export async function proxy(request: NextRequest) {
   try {
-    const { pathname } = request.nextUrl;
-
-    const pathWithQuery = `${pathname}${request.nextUrl.search}`;
+    const { pathname, search } = request.nextUrl;
+    const pathWithQuery = `${pathname}${search}`;
 
     const accessToken = request.cookies.get('accessToken')?.value;
-
     const refreshToken = request.cookies.get('refreshToken')?.value;
 
-    let userRole: UserRole | null = null;
+    // ===============================
+    // Decode token
+    // ===============================
+    const decoded = accessToken
+      ? jwtUtils.verifyToken(
+          accessToken,
+          process.env.JWT_ACCESS_SECRET as string,
+        )
+      : null;
 
-    let isValidAccessToken = false;
+    const isValidAccessToken = !!decoded?.success;
 
-    if (accessToken) {
-      try {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-
-        userRole = payload?.role || null;
-
-        isValidAccessToken = true;
-      } catch {
-        userRole = null;
-        isValidAccessToken = false;
-      }
-    }
+    const userRole: UserRole | null = decoded?.data?.role || null;
 
     const routeOwner = getRouteOwner(pathname);
-
     const isAuth = isAuthRoute(pathname);
 
-    if (isValidAccessToken && refreshToken) {
-      const requestHeaders = new Headers(request.headers);
-
-      try {
-        const refreshed = await refreshTokenMiddleware(refreshToken);
-
-        if (refreshed) {
-          requestHeaders.set('x-token-refreshed', '1');
-        }
-
-        return NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-      }
+    // ===============================
+    // PUBLIC ROUTE
+    // ===============================
+    if (routeOwner === null) {
+      return NextResponse.next();
     }
 
+    // ===============================
+    // NO TOKEN → LOGIN
+    // ===============================
+    if (!accessToken || !isValidAccessToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathWithQuery);
+
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // ===============================
+    // REFRESH TOKEN
+    // ===============================
+    if (refreshToken && (await isTokenExpiringSoon(accessToken))) {
+      await refreshTokenMiddleware(refreshToken);
+    }
+
+    // ===============================
+    // AUTH PAGE BLOCK
+    // ===============================
     if (
       isAuth &&
-      isValidAccessToken &&
       pathname !== '/verify-email' &&
       pathname !== '/reset-password'
     ) {
@@ -94,54 +83,68 @@ export const proxy = async (request: NextRequest) => {
       );
     }
 
+    // ===============================
+    // RESET PASSWORD
+    // ===============================
     if (pathname === '/reset-password') {
       const email = request.nextUrl.searchParams.get('email');
 
-      if (email) {
+      if (!email) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathWithQuery);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      return NextResponse.next();
+    }
+
+    // ===============================
+    // EMAIL VERIFY FLOW
+    // ===============================
+    const userInfo = await getUserInfo();
+
+    if (userInfo) {
+      if (!userInfo.emailVerified) {
+        if (pathname !== '/verify-email') {
+          const verifyUrl = new URL('/verify-email', request.url);
+          verifyUrl.searchParams.set('email', userInfo.email);
+          return NextResponse.redirect(verifyUrl);
+        }
         return NextResponse.next();
       }
 
-      const loginUrl = new URL('/login', request.url);
-
-      loginUrl.searchParams.set('redirect', pathWithQuery);
-
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (routeOwner === null) {
-      return NextResponse.next();
-    }
-
-    if (!accessToken || !isValidAccessToken) {
-      const loginUrl = new URL('/login', request.url);
-
-      loginUrl.searchParams.set('redirect', pathWithQuery);
-
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (routeOwner === 'COMMON') {
-      return NextResponse.next();
-    }
-
-    if (routeOwner === 'ADMIN' || routeOwner === 'USER') {
-      if (routeOwner !== userRole) {
+      if (pathname === '/verify-email') {
         return NextResponse.redirect(
           new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
         );
       }
     }
 
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Error in proxy middleware:', error);
+    // ===============================
+    // COMMON ROUTES
+    // ===============================
+    if (routeOwner === 'COMMON') {
+      return NextResponse.next();
+    }
+
+    // ===============================
+    // ROLE CHECK (ONLY USER + ADMIN)
+    // ===============================
+    if (routeOwner !== userRole) {
+      return NextResponse.redirect(
+        new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
+      );
+    }
 
     return NextResponse.next();
+  } catch (error) {
+    console.error('Middleware error:', error);
+    return NextResponse.next();
   }
-};
+}
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.well-known).*)',
   ],
 };
