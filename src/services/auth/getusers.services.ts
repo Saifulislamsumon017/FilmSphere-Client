@@ -53,31 +53,45 @@ export const getUserInfo = async () => {
     const cookieStore = await cookies();
 
     const accessToken = cookieStore.get('accessToken')?.value;
-
     const sessionToken = cookieStore.get('better-auth.session_token')?.value;
 
-    if (!accessToken) {
+    // token না থাকলে user logged in না
+    if (!accessToken && !sessionToken) {
       return null;
+    }
+
+    const cookieParts = [];
+
+    if (accessToken) {
+      cookieParts.push(`accessToken=${accessToken}`);
+    }
+
+    if (sessionToken) {
+      cookieParts.push(`better-auth.session_token=${sessionToken}`);
     }
 
     const res = await fetch(`${BASE_API_URL}/auth/me`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        Cookie: `accessToken=${accessToken}; better-auth.session_token=${sessionToken}`,
+        Cookie: cookieParts.join('; '),
       },
+      cache: 'no-store',
     });
 
-    if (!res.ok) {
-      console.error('Failed to fetch user info:', res.status, res.statusText);
+    // unauthorized / invalid token
+    if (res.status === 401 || res.status === 403) {
       return null;
     }
 
-    const { data } = await res.json();
+    // server error
+    if (!res.ok) {
+      return null;
+    }
 
-    return data;
-  } catch (error) {
-    console.error('Error fetching user info:', error);
+    const result = await res.json();
+
+    return result?.data ?? null;
+  } catch {
     return null;
   }
 };

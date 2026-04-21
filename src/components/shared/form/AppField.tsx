@@ -53,9 +53,17 @@ const AppField = ({
         {label}
       </Label>
 
-      <div className="relative">
+      {/* <div className="relative">
         {prepend && (
           <div className="absolute inset-y-0 left-0 items-center pl-3 pointer-events-none z-10">
+            {prepend}
+          </div>
+        )} */}
+
+      <div className="relative">
+        {/* PREPEND */}
+        {prepend && (
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 z-10">
             {prepend}
           </div>
         )}
@@ -77,9 +85,9 @@ const AppField = ({
             hasError && 'border-destructive focus-visible:ring-destructive/20',
           )}
         />
-
+        {/* APPEND (CLICKABLE FIXED) */}
         {append && (
-          <div className="absolute inset-y-0 right-0 items-center pr-3 pointer-events-none z-10">
+          <div className="absolute inset-y-0 right-0 items-center pr-3 z-10">
             {append}
           </div>
         )}

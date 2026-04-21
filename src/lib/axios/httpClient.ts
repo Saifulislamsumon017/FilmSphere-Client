@@ -1,5 +1,3 @@
-'use server';
-
 import { ApiResponse } from '@/types/api.types';
 import axios from 'axios';
 import { cookies, headers } from 'next/headers';

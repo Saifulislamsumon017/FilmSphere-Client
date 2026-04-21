@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 
 interface DashboardMobileSidebarProps {
   userInfo: UserInfo;
+
   navItems: NavSection[];
   dashboardHome: string;
 }

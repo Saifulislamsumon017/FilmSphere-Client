@@ -1,49 +1,49 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use server';
+
 import { httpClient } from '@/lib/axios/httpClient';
 import { ApiErrorResponse } from '@/types/api.types';
-import { IForgetPasswordResponse } from '@/types/auth.types';
 import {
   forgetPasswordZodSchema,
   IForgetPasswordPayload,
 } from '@/zod/auth.validation';
-import { redirect } from 'next/navigation';
+
+export interface IForgetPasswordResponse {
+  success: boolean;
+  message: string;
+}
 
 export const forgetPasswordService = async (
   payload: IForgetPasswordPayload,
 ): Promise<IForgetPasswordResponse | ApiErrorResponse> => {
-  const parsedPayload = forgetPasswordZodSchema.safeParse(payload);
+  const parsed = forgetPasswordZodSchema.safeParse(payload);
 
-  if (!parsedPayload.success) {
+  if (!parsed.success) {
     return {
       success: false,
-      message: parsedPayload.error.issues[0].message || 'Invalid input',
+      message: parsed.error.issues?.[0]?.message || 'Invalid email',
     };
   }
 
   try {
     const response = await httpClient.post<IForgetPasswordResponse>(
       '/auth/forget-password',
-      parsedPayload.data,
+      {
+        email: parsed.data.email.trim().toLowerCase(),
+      },
     );
 
-    if (response.success) {
-      redirect(`/reset-password?email=${response.data.email}`);
-    }
-
-    return response.data;
-  } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error &&
-      'digest' in error &&
-      typeof (error as { digest: string }).digest === 'string' &&
-      (error as { digest: string }).digest.startsWith('NEXT_REDIRECT')
-    ) {
-      throw error;
-    }
-
+    return {
+      success: response.success,
+      message: response.message,
+    };
+  } catch (error: any) {
     return {
       success: false,
-      message: 'Failed to send OTP',
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to send OTP',
     };
   }
 };

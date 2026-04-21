@@ -1,51 +1,67 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use server';
+
 import { httpClient } from '@/lib/axios/httpClient';
 import { ApiErrorResponse } from '@/types/api.types';
 import { IVerifyEmailResponse } from '@/types/auth.types';
-
 import {
   IVerifyEmailPayload,
   verifyEmailZodSchema,
 } from '@/zod/auth.validation';
 
-import { redirect } from 'next/navigation';
-
 export const verifyEmailService = async (
   payload: IVerifyEmailPayload,
 ): Promise<IVerifyEmailResponse | ApiErrorResponse> => {
-  const parsedPayload = verifyEmailZodSchema.safeParse(payload);
+  // 🔥 Validate input
+  const parsed = verifyEmailZodSchema.safeParse(payload);
 
-  if (!parsedPayload.success) {
+  if (!parsed.success) {
     return {
       success: false,
-      message: parsedPayload.error.issues[0].message || 'Invalid input',
+      message: parsed.error.issues?.[0]?.message || 'Invalid input',
     };
   }
 
+  // 🔥 normalize payload
+  const safePayload = {
+    email: parsed.data.email.trim().toLowerCase(),
+    otp: String(parsed.data.otp).trim(),
+  };
+
   try {
+    // 🔥 TYPE SAFE API CALL
     const response = await httpClient.post<IVerifyEmailResponse>(
       '/auth/verify-email',
-      parsedPayload.data,
+      safePayload,
     );
 
-    if (response.success) {
-      redirect('/login');
-    }
+    const data = response.data;
 
-    return response.data;
-  } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error &&
-      'digest' in error &&
-      typeof (error as { digest: string }).digest === 'string' &&
-      (error as { digest: string }).digest.startsWith('NEXT_REDIRECT')
-    ) {
-      throw error;
+    console.log('VERIFY EMAIL RESPONSE:', data);
+
+    // 🔥 SAFE SUCCESS CHECK (robust)
+    const isSuccess =
+      data?.success === true || data?.message === 'Email verified successfully';
+
+    if (!isSuccess) {
+      return {
+        success: false,
+        message: data?.message || 'Verification failed',
+      };
     }
 
     return {
+      success: true,
+      message: data?.message || 'Email verified successfully',
+      data: data?.data,
+    };
+  } catch (error: any) {
+    return {
       success: false,
-      message: 'Email verification failed',
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        'Verification failed',
     };
   }
 };
