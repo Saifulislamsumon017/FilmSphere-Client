@@ -1,7 +1,3 @@
-/* =========================================================
-   FORGET PASSWORD FORM
-   FILE: src/components/modules/auth/ForgetPasswordForm.tsx
-========================================================= */
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -34,20 +30,28 @@ const ForgetPasswordForm = () => {
     onSubmit: async ({ value }) => {
       setServerError(null);
 
+      console.log('FORM VALUE:', value);
+
       const result = await forgetPasswordService(value);
 
-      if (!result || result.success === false) {
-        const msg = result.message || 'Failed';
+      console.log('API RESULT:', result);
+
+      // ✅ FIXED CONDITION
+      if (!result?.success) {
+        const msg = result?.message || 'Failed to send OTP';
         setServerError(msg);
         toast.error(msg);
         return;
       }
 
-      toast.success(result.message);
+      toast.success(result.message || 'OTP sent successfully');
 
-      router.push(
-        `/reset-password?email=${encodeURIComponent(value.email.trim())}`,
-      );
+      console.log('REDIRECTING...');
+
+      // ✅ ensure trimmed email
+      const email = value.email.trim();
+
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     },
   });
 

@@ -38,6 +38,8 @@ export const forgetPasswordService = async (
       message: response.message,
     };
   } catch (error: any) {
+    console.error('FORGET PASSWORD ERROR:', error);
+
     return {
       success: false,
       message:

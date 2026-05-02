@@ -24,31 +24,26 @@ async function refreshTokenMiddleware(refreshToken: string): Promise<boolean> {
 export async function proxy(request: NextRequest) {
   try {
     const { pathname, search } = request.nextUrl;
-    const pathWithQuery = `${pathname}${search}`;
+    const fullPath = `${pathname}${search}`;
 
     const accessToken = request.cookies.get('accessToken')?.value;
     const refreshToken = request.cookies.get('refreshToken')?.value;
-
-    // ===============================
-    // Decode token
-    // ===============================
-    const decoded = accessToken
-      ? jwtUtils.verifyToken(
-          accessToken,
-          process.env.JWT_ACCESS_SECRET as string,
-        )
-      : null;
-
-    const isValidAccessToken = !!decoded?.success;
-
-    const userRole: UserRole | null = decoded?.data?.role || null;
 
     const routeOwner = getRouteOwner(pathname);
     const isAuth = isAuthRoute(pathname);
 
     // ===============================
-    // PUBLIC ROUTE
+    // PUBLIC ROUTES
     // ===============================
+    if (pathname === '/verify-email') {
+      return NextResponse.next();
+    }
+
+    if (pathname === '/reset-password') {
+      const email = request.nextUrl.searchParams.get('email');
+      if (email) return NextResponse.next();
+    }
+
     if (routeOwner === null) {
       return NextResponse.next();
     }
@@ -56,12 +51,27 @@ export async function proxy(request: NextRequest) {
     // ===============================
     // NO TOKEN → LOGIN
     // ===============================
-    if (!accessToken || !isValidAccessToken) {
+    if (!accessToken) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathWithQuery);
-
+      loginUrl.searchParams.set('redirect', fullPath);
       return NextResponse.redirect(loginUrl);
     }
+
+    // ===============================
+    // VERIFY TOKEN (SAFE)
+    // ===============================
+    const decoded = jwtUtils.verifyToken(
+      accessToken,
+      process.env.JWT_ACCESS_SECRET as string,
+    );
+
+    if (!decoded?.success || !decoded.data) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', fullPath);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const userRole = decoded.data.role as UserRole;
 
     // ===============================
     // REFRESH TOKEN
@@ -71,7 +81,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // ===============================
-    // AUTH PAGE BLOCK
+    // BLOCK AUTH ROUTES IF LOGGED IN
     // ===============================
     if (
       isAuth &&
@@ -79,61 +89,58 @@ export async function proxy(request: NextRequest) {
       pathname !== '/reset-password'
     ) {
       return NextResponse.redirect(
-        new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
+        new URL(getDefaultDashboardRoute(userRole), request.url),
       );
     }
 
     // ===============================
-    // RESET PASSWORD
-    // ===============================
-    if (pathname === '/reset-password') {
-      const email = request.nextUrl.searchParams.get('email');
-
-      if (!email) {
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('redirect', pathWithQuery);
-        return NextResponse.redirect(loginUrl);
-      }
-
-      return NextResponse.next();
-    }
-
-    // ===============================
-    // EMAIL VERIFY FLOW
+    // USER INFO
     // ===============================
     const userInfo = await getUserInfo();
 
     if (userInfo) {
+      // EMAIL VERIFY FLOW
       if (!userInfo.emailVerified) {
         if (pathname !== '/verify-email') {
-          const verifyUrl = new URL('/verify-email', request.url);
-          verifyUrl.searchParams.set('email', userInfo.email);
-          return NextResponse.redirect(verifyUrl);
+          const url = new URL('/verify-email', request.url);
+          url.searchParams.set('email', userInfo.email);
+          return NextResponse.redirect(url);
         }
         return NextResponse.next();
       }
 
       if (pathname === '/verify-email') {
         return NextResponse.redirect(
-          new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
+          new URL(getDefaultDashboardRoute(userRole), request.url),
+        );
+      }
+
+      // PASSWORD CHANGE FLOW
+      if (userInfo.needPasswordChange) {
+        if (pathname !== '/reset-password') {
+          const url = new URL('/reset-password', request.url);
+          url.searchParams.set('email', userInfo.email);
+          return NextResponse.redirect(url);
+        }
+        return NextResponse.next();
+      }
+
+      if (!userInfo.needPasswordChange && pathname === '/reset-password') {
+        return NextResponse.redirect(
+          new URL(getDefaultDashboardRoute(userRole), request.url),
         );
       }
     }
 
     // ===============================
-    // COMMON ROUTES
+    // ROLE BASED ACCESS
     // ===============================
-    if (routeOwner === 'COMMON') {
-      return NextResponse.next();
-    }
-
-    // ===============================
-    // ROLE CHECK (ONLY USER + ADMIN)
-    // ===============================
-    if (routeOwner !== userRole) {
-      return NextResponse.redirect(
-        new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
-      );
+    if (routeOwner && routeOwner !== 'COMMON') {
+      if (routeOwner !== userRole) {
+        return NextResponse.redirect(
+          new URL(getDefaultDashboardRoute(userRole), request.url),
+        );
+      }
     }
 
     return NextResponse.next();

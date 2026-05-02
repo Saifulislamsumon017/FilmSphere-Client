@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Menu, X, Search, Heart } from 'lucide-react';
+import {
+  Film,
+  Menu,
+  X,
+  Search,
+  Heart,
+  LogOut,
+  LayoutDashboard,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,9 +27,12 @@ const navItems = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // 🔥 login state (demo)
+  const [user, setUser] = useState(true); // true হলে logged in
+
   const pathname = usePathname();
 
-  // scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -30,6 +41,10 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    setUser(false);
+  };
 
   return (
     <nav
@@ -41,12 +56,15 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <Film className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:rotate-12 transition-transform" />
-          <span className="font-play text-xl sm:text-2xl tracking-wider text-foreground">
-            FILM<span className="text-primary">SPHERE</span>
-          </span>
-        </Link>
+        <div className="flex h-16 items-center px-6">
+          <Link href="/" className="flex items-center gap-2 group">
+            <Film className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:rotate-12 transition-transform" />
+            <span className="font-play text-xl sm:text-2xl tracking-wider text-foreground">
+              FILM<span className="text-primary">SPHERE</span>
+            </span>
+            {/* <span className="text-xl font-bold text-primary">FILM SPHERE</span> */}
+          </Link>
+        </div>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
@@ -79,15 +97,33 @@ export default function Navbar() {
             </Button>
           </Link>
 
-          <Link href="/login">
-            <Button variant="outline" size="sm" className="text-foreground">
-              Sign In
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
 
-          <Link href="/register">
-            <Button size="sm">Join Free</Button>
-          </Link>
+              <Button size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+
+              <Link href="/register">
+                <Button size="sm">Join Free</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Button */}
@@ -129,15 +165,40 @@ export default function Navbar() {
               ))}
 
               <div className="flex flex-col gap-2 mt-3">
-                <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  <Button variant="outline" className="w-full text-foreground">
-                    Sign In
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Button variant="outline" className="w-full">
+                        Dashboard
+                      </Button>
+                    </Link>
 
-                <Link href="/register" onClick={() => setMobileOpen(false)}>
-                  <Button className="w-full">Join Free</Button>
-                </Link>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileOpen(false);
+                      }}
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+
+                    <Link href="/register" onClick={() => setMobileOpen(false)}>
+                      <Button className="w-full">Join Free</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

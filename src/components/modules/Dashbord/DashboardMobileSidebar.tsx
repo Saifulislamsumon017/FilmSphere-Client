@@ -6,6 +6,7 @@ import { getIconComponent } from '@/lib/iconMapper';
 import { cn } from '@/lib/utils';
 import { NavSection } from '@/types/dashboard.types';
 import { UserInfo } from '@/types/user.types';
+import { Film } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -26,8 +27,13 @@ const DashboardMobileSidebar = ({
     <div className="flex h-full flex-col overflow-y-auto">
       {/* Logo / Brand */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href={dashboardHome}>
-          <span className="text-xl font-bold text-primary">FILM SPHERE</span>
+        <Link href={dashboardHome} className="flex items-center gap-2 group">
+          {/* <Link href="/" className="flex items-center gap-2 group"> */}
+          <Film className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:rotate-12 transition-transform" />
+          <span className="font-play text-xl sm:text-2xl tracking-wider text-foreground">
+            FILM<span className="text-primary">SPHERE</span>
+          </span>
+          {/* <span className="text-xl font-bold text-primary">FILM SPHERE</span> */}
         </Link>
       </div>
 
