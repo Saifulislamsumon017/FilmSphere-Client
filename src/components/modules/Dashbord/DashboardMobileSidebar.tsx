@@ -1,7 +1,8 @@
 'use client';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { SheetTitle } from '@/components/ui/sheet';
+import { SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { getIconComponent } from '@/lib/iconMapper';
 import { cn } from '@/lib/utils';
 import { NavSection } from '@/types/dashboard.types';
@@ -12,7 +13,6 @@ import { usePathname } from 'next/navigation';
 
 interface DashboardMobileSidebarProps {
   userInfo: UserInfo;
-
   navItems: NavSection[];
   dashboardHome: string;
 }
@@ -23,24 +23,22 @@ const DashboardMobileSidebar = ({
   userInfo,
 }: DashboardMobileSidebarProps) => {
   const pathname = usePathname();
+
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       {/* Logo / Brand */}
-      <div className="flex h-16 items-center border-b px-6">
+      <div className="flex h-16 items-center border-b px-6 py-3">
         <Link href={dashboardHome} className="flex items-center gap-2 group">
-          {/* <Link href="/" className="flex items-center gap-2 group"> */}
           <Film className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:rotate-12 transition-transform" />
           <span className="font-play text-xl sm:text-2xl tracking-wider text-foreground">
             FILM<span className="text-primary">SPHERE</span>
           </span>
-          {/* <span className="text-xl font-bold text-primary">FILM SPHERE</span> */}
         </Link>
       </div>
 
       <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 
-      {/* Navigation Area  */}
-
+      {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
           {navItems.map((section, sectionId) => (
@@ -57,19 +55,20 @@ const DashboardMobileSidebar = ({
                   const Icon = getIconComponent(item.icon);
 
                   return (
-                    <Link
-                      href={item.href}
-                      key={id}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                    </Link>
+                    <SheetClose asChild key={id}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="flex-1">{item.title}</span>
+                      </Link>
+                    </SheetClose>
                   );
                 })}
               </div>
@@ -86,7 +85,6 @@ const DashboardMobileSidebar = ({
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            {/* if profile doesnt exist , use first letter of user name as profile photo like component */}
             <span className="text-sm font-semibold text-primary">
               {userInfo.name.charAt(0).toUpperCase()}
             </span>
@@ -95,7 +93,7 @@ const DashboardMobileSidebar = ({
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-medium truncate">{userInfo.name}</p>
             <p className="text-xs text-muted-foreground capitalize">
-              {userInfo.role.toLocaleLowerCase().replace('_', ' ')}
+              {userInfo.role.toLowerCase().replace('_', ' ')}
             </p>
           </div>
         </div>

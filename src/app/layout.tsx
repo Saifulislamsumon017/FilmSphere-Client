@@ -4,6 +4,8 @@ import './globals.css';
 
 import QueryProvider from '@/providers/QueryProvider';
 import { Toaster } from 'sonner';
+import ThemeProvider from '@/providers/ThemeProvider';
+import AuthProvider from '@/providers/AuthProvider';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -56,10 +58,18 @@ export default function RootLayout({
         suppressHydrationWarning
         // className="min-h-full flex flex-col font-sans"
       >
-        <QueryProvider>
-          {children}
-          <Toaster position="top-right" richColors />
-        </QueryProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            <AuthProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </AuthProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

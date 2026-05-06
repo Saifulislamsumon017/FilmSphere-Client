@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UserRole } from '@/lib/authUtils';
 
 export type UserStatus = 'ACTIVE' | 'BANNED' | 'SUSPENDED' | 'DELETED';
@@ -11,6 +12,7 @@ export interface IUser {
   role: UserRole;
   status: UserStatus;
   isDeleted: boolean;
+  [key: string]: any;
 }
 
 export interface IRegisterResponse {

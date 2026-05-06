@@ -1,50 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Film,
-  Menu,
-  X,
-  Search,
-  Heart,
-  LogOut,
-  LayoutDashboard,
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+
+import { Film, LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState, useTransition } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
-const navItems = [
-  { label: 'Home', path: '/' },
-  { label: 'Movies', path: '/movies' },
-  { label: 'Series', path: '/series' },
-  { label: 'Pricing', path: '/pricing' },
-  { label: 'About', path: '/about' },
-  { label: 'Contact', path: '/contact' },
-];
+import { getDefaultDashboardRoute } from '@/lib/authUtils';
+import { logoutService } from '@/services/auth/logout.service';
+import { publicNavbarItems } from '@/lib/navItems';
+import ThemeSwitch from '../shared/ThemeSwitch/ThemeSwitch';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
-export default function Navbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+const Navbar = () => {
+  const { user, setUser } = useAuthUser();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [scrolled, setScrolled] = useState(false);
 
-  // 🔥 login state (demo)
-  const [user, setUser] = useState(true); // true হলে logged in
-
+  const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
+  const dashboardHref = user ? getDefaultDashboardRoute(user.role) : '/login';
+
+  // ✅ scroll effect ONLY (no setState cascade problem)
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ✅ logout handler
   const handleLogout = () => {
-    setUser(false);
+    startTransition(async () => {
+      try {
+        await logoutService();
+
+        queryClient.removeQueries({ queryKey: ['user', 'me'] });
+        setUser(null);
+
+        router.replace('/login');
+      } catch (err) {
+        console.error(err);
+      }
+    });
   };
+
+  // ✅ reusable navigation handler (BEST PRACTICE)
+  const handleNavigate = (path: string) => {
+    setIsOpen(false); // close mobile menu
+    router.push(path);
+  };
+
+  // ✅ reusable logo
+  const Logo = (
+    <div
+      onClick={() => handleNavigate('/')}
+      className="flex items-center gap-2 group cursor-pointer"
+    >
+      <Film className="w-5 h-5 sm:w-6 sm:h-6 text-primary group-hover:rotate-12 transition-transform" />
+      <span className="font-play text-base sm:text-lg md:text-xl tracking-wider">
+        FILM<span className="text-primary">SPHERE</span>
+      </span>
+    </div>
+  );
 
   return (
     <nav
@@ -54,156 +83,145 @@ export default function Navbar() {
           : 'bg-background'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex h-16 items-center px-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Film className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:rotate-12 transition-transform" />
-            <span className="font-play text-xl sm:text-2xl tracking-wider text-foreground">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 h-16 flex items-center justify-between">
+        {/* ✅ MOBILE */}
+        <div className="md:hidden flex items-center gap-2">
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+
+            <SheetContent side="left" className="w-[85%] max-w-sm p-0">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+
+              <div className="flex h-full flex-col">
+                {/* LOGO */}
+                <div className="flex h-16 items-center border-b px-4">
+                  {Logo}
+                </div>
+
+                {/* NAV ITEMS */}
+                <div className="flex-1 space-y-1 p-4">
+                  {publicNavbarItems.map(item => (
+                    <button
+                      key={item.href}
+                      onClick={() => handleNavigate(item.href)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition ${
+                        pathname === item.href
+                          ? 'bg-primary/10 text-primary'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+
+                {/* AUTH (MOBILE) */}
+                <div className="border-t p-4">
+                  {user ? (
+                    <Button
+                      onClick={() => {
+                        setIsOpen(false);
+                        handleLogout();
+                      }}
+                      disabled={isPending}
+                      className="w-full text-sm"
+                      variant="destructive"
+                    >
+                      <LogOut className="mr-1 h-4 w-4" />
+                      {isPending ? 'Logging...' : 'Logout'}
+                    </Button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        className="text-sm"
+                        onClick={() => handleNavigate('/login')}
+                      >
+                        Login
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="text-sm"
+                        onClick={() => handleNavigate('/register')}
+                      >
+                        Sign Up
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* ✅ DESKTOP LOGO */}
+        <div className="hidden md:block">
+          <Link href="/" className="flex items-center gap-2">
+            <Film className="w-6 h-6 text-primary" />
+            <span className="text-xl font-bold">
               FILM<span className="text-primary">SPHERE</span>
             </span>
-            {/* <span className="text-xl font-bold text-primary">FILM SPHERE</span> */}
           </Link>
         </div>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1">
-          {navItems.map(item => (
+        {/* ✅ DESKTOP NAV */}
+        <nav className="hidden md:flex gap-5 lg:gap-6">
+          {publicNavbarItems.map(item => (
             <Link
-              key={item.path}
-              href={item.path}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition ${
-                pathname === item.path
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              key={item.href}
+              href={item.href}
+              className={`text-sm md:text-base transition ${
+                pathname === item.href
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {item.label}
+              {item.title}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        {/* Right Actions */}
-        <div className="hidden md:flex items-center gap-2">
-          <Link href="/watchlist">
-            <Button variant="ghost" size="icon">
-              <Heart className="w-5 h-5" />
-            </Button>
-          </Link>
-
-          <Link href="/search">
-            <Button variant="ghost" size="icon">
-              <Search className="w-5 h-5" />
-            </Button>
-          </Link>
-
-          {user ? (
-            <>
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  <LayoutDashboard className="w-4 h-4 mr-2" />
-                  Dashboard
+        {/* ✅ RIGHT SIDE */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                <Button asChild variant="ghost" className="text-sm">
+                  <Link href={dashboardHref}>Dashboard</Link>
                 </Button>
-              </Link>
 
-              <Button size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-
-              <Link href="/register">
-                <Button size="sm">Join Free</Button>
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Button */}
-        <button
-          className="md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? (
-            <X className="w-6 h-6 text-foreground" />
-          ) : (
-            <Menu className="w-6 h-6 text-foreground" />
-          )}
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border"
-          >
-            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-2">
-              {navItems.map(item => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition ${
-                    pathname === item.path
-                      ? 'text-primary bg-primary/10'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                  }`}
+                <Button
+                  variant="destructive"
+                  onClick={handleLogout}
+                  disabled={isPending}
+                  className="text-sm"
                 >
-                  {item.label}
-                </Link>
-              ))}
+                  <LogOut className="mr-1 h-4 w-4" />
+                  {isPending ? 'Logging...' : 'Logout'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="text-sm">
+                  <Link href="/login">Login</Link>
+                </Button>
 
-              <div className="flex flex-col gap-2 mt-3">
-                {user ? (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Button variant="outline" className="w-full">
-                        Dashboard
-                      </Button>
-                    </Link>
+                <Button asChild className="text-sm">
+                  <Link href="/register">Sign Up</Link>
+                </Button>
+              </>
+            )}
+          </div>
 
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileOpen(false);
-                      }}
-                    >
-                      Logout
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        Sign In
-                      </Button>
-                    </Link>
-
-                    <Link href="/register" onClick={() => setMobileOpen(false)}>
-                      <Button className="w-full">Join Free</Button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <ThemeSwitch />
+        </div>
+      </div>
     </nav>
   );
-}
+};
+
+export default Navbar;

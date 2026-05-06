@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import DashboardMobileSidebar from './DashboardMobileSidebar';
 import NotificationDropdown from './NotificationDropdown';
 import UserDropdown from './UserDropdown';
+import ThemeSwitch from '@/components/shared/ThemeSwitch/ThemeSwitch';
 
 interface DashboardNavbarProps {
   userInfo: UserInfo;
@@ -39,7 +40,7 @@ const DashboardNavbarContent = ({
   }, []);
 
   return (
-    <div className="flex items-center gap-4 w-full px-4 py-3 border-b bg-background">
+    <div className="h-16 shrink-0 flex items-center gap-4 w-full px-4 border-b bg-background">
       {/* Mobile Menu Toggle Button And Menu */}
       <Sheet open={isOpen && isMobile} onOpenChange={setIsOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -73,6 +74,7 @@ const DashboardNavbarContent = ({
         {/* User Dropdown  */}
         <UserDropdown userInfo={userInfo} />
       </div>
+      <ThemeSwitch />
     </div>
   );
 };

@@ -47,14 +47,14 @@ const ResetPasswordForm = () => {
       }
 
       toast.success('Password reset successful');
-
       router.push('/login');
     },
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
+    // <div className="min-h-screen flex items-center justify-center">
+    <div className=" flex items-center justify-center mt-20">
+      <Card className="w-full max-w-md mx-auto shadow-md">
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>
         </CardHeader>
@@ -74,20 +74,22 @@ const ResetPasswordForm = () => {
             {/* OTP */}
             <form.Field name="otp">
               {field => (
-                <InputOTP
-                  maxLength={6}
-                  value={field.state.value}
-                  onChange={field.handleChange}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+                <div className="flex justify-center overflow-hidden">
+                  <InputOTP
+                    maxLength={6}
+                    value={field.state.value}
+                    onChange={field.handleChange}
+                  >
+                    <InputOTPGroup className="flex gap-2 flex-wrap justify-center">
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
               )}
             </form.Field>
 

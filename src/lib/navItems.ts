@@ -1,6 +1,20 @@
 import { NavSection } from '@/types/dashboard.types';
 import { getDefaultDashboardRoute, UserRole } from './authUtils';
 
+export interface PublicNavItem {
+  title: string;
+  href: string;
+}
+
+export const publicNavbarItems: PublicNavItem[] = [
+  { title: 'Home', href: '/' },
+  { title: 'Movies', href: '/movies' },
+  { title: 'Series', href: '/series' },
+  { title: 'Pricing', href: '/pricing' },
+  { title: 'About', href: '/about' },
+  { title: 'Contact', href: '/contact' },
+];
+
 export const getCommonNavItems = (role: UserRole): NavSection[] => {
   const defaultDashboard = getDefaultDashboardRoute(role);
 

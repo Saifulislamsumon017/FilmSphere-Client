@@ -55,7 +55,6 @@ export const getUserInfo = async () => {
     const accessToken = cookieStore.get('accessToken')?.value;
     const sessionToken = cookieStore.get('better-auth.session_token')?.value;
 
-    // token না থাকলে user logged in না
     if (!accessToken && !sessionToken) {
       return null;
     }
@@ -78,7 +77,6 @@ export const getUserInfo = async () => {
       cache: 'no-store',
     });
 
-    // unauthorized / invalid token
     if (res.status === 401 || res.status === 403) {
       return null;
     }
